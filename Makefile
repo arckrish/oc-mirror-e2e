@@ -7,6 +7,7 @@ ANSIBLE_SKIP_TAGS =
 ANSIBLE_SCENARIO_VARS = scenario
 ANSIBLE_PLAYBOOKS = create test delete
 
+
 .PHONY: all prereqs clean-prereqs collection publish ee ee-publish run clean realclean
 
 all: collection
@@ -15,7 +16,7 @@ all: collection
 #                             DEV ENVIRONMENT                                #
 ##############################################################################
 .venv/bin/pip:
-	python3 -m venv .venv
+	python3.9  -m venv .venv
 	.venv/bin/pip install --upgrade pip setuptools wheel
 
 .pip-prereqs: .venv/bin/pip
@@ -56,8 +57,8 @@ publish: .collection-published
 .ee-built: jharmison_redhat-oc_mirror_e2e-$(VERSION).tar.gz
 	cp jharmison_redhat-oc_mirror_e2e-$(VERSION).tar.gz execution-environment/jharmison_redhat-oc_mirror_e2e-latest.tar.gz
 	cd execution-environment \
-	  && $(RUNTIME) build . -f Containerfile.builder -t extended-builder-image \
-	  && $(RUNTIME) build . -f Containerfile.base -t extended-base-image \
+	  && $(RUNTIME) build . -f Containerfile.builder -t extended-builder-image --platform="linux/amd64" \
+	  && $(RUNTIME) build . -f Containerfile.base -t extended-base-image --platform="linux/amd64" \
 	  && ../.venv/bin/ansible-builder build -v 3 --container-runtime $(RUNTIME) -t oc-mirror-e2e:$(VERSION)
 	touch .ee-built
 
@@ -88,7 +89,7 @@ exec: .ee-built
 clean:
 	rm -rf jharmison_redhat-oc_mirror_e2e-*.tar.gz collection/galaxy.yml
 realclean: clean clean-prereqs
-	podman unshare rm -rf example/output/*
+	rm -rf example/output/*
 	rm -rf example/artifacts/* .collection-published .ee-built .ee-published
 	-$(RUNTIME) rmi extended-builder-image
 	-$(RUNTIME) rmi extended-base-image
